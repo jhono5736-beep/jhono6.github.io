@@ -1,0 +1,436 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .app {
+    background: linear-gradient(to bottom, #111111, #3a3a3a);
+    min-height: 750px;
+    border-radius: 36px;
+    padding: 28px 16px 24px;
+    color: white;
+    max-width: 375px;
+    margin: 0 auto;
+    position: relative;
+    font-family: var(--font-sans);
+  }
+  .notch { width: 80px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 auto 20px; }
+  .header { text-align: center; margin-bottom: 18px; }
+  .header h1 { font-size: 18px; font-weight: 500; }
+  .header p { font-size: 11px; color: #aaa; margin-top: 3px; }
+
+  .balance-card {
+    background: rgba(255,255,255,0.09);
+    border: 0.5px solid rgba(255,255,255,0.15);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .balance-label { font-size: 11px; color: #bbb; margin-bottom: 3px; }
+  .balance-total { font-size: 30px; font-weight: 500; color: white; }
+
+  .summary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .summary-card {
+    background: rgba(255,255,255,0.07);
+    border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 12px;
+    text-align: center;
+  }
+  .summary-label { font-size: 10px; color: #aaa; margin-bottom: 3px; }
+  .income-val { font-size: 18px; font-weight: 500; color: #4ade80; }
+  .expense-val { font-size: 18px; font-weight: 500; color: #f87171; }
+
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .btn-beige {
+    background: #b5956a;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+  .btn-beige:active { background: #9e7d54; }
+
+  .section-title { font-size: 12px; color: #bbb; margin-bottom: 8px; font-weight: 500; }
+
+  .month-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; scrollbar-width: none; }
+  .month-tab {
+    background: rgba(255,255,255,0.07);
+    border: 0.5px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 11px;
+    color: #ccc;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: var(--font-sans);
+  }
+  .month-tab.active { background: #b5956a; border-color: #b5956a; color: white; }
+
+  .transactions { display: flex; flex-direction: column; gap: 7px; }
+  .tx-item {
+    background: rgba(255,255,255,0.06);
+    border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .tx-left { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .tx-desc { font-size: 13px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-date { font-size: 10px; color: #888; margin-top: 2px; }
+  .tx-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .tx-amount { font-size: 14px; font-weight: 500; }
+  .tx-amount.income { color: #4ade80; }
+  .tx-amount.expense { color: #f87171; }
+  .btn-delete {
+    background: rgba(248,113,113,0.15);
+    border: 0.5px solid rgba(248,113,113,0.3);
+    border-radius: 8px;
+    color: #f87171;
+    font-size: 14px;
+    width: 28px;
+    height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-family: var(--font-sans);
+    line-height: 1;
+  }
+  .btn-delete:active { background: rgba(248,113,113,0.3); }
+
+  .modal-bg {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.65);
+    border-radius: 36px;
+    z-index: 10;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #1c1c1e;
+    border: 0.5px solid rgba(255,255,255,0.18);
+    border-radius: 24px 24px 36px 36px;
+    padding: 20px 18px 28px;
+    width: 100%;
+  }
+  .modal-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 4px; margin: 0 auto 16px; }
+  .modal h2 { font-size: 15px; font-weight: 500; color: white; margin-bottom: 14px; }
+  .modal label { font-size: 11px; color: #aaa; display: block; margin-bottom: 4px; margin-top: 10px; }
+  .modal input, .modal select {
+    width: 100%;
+    background: rgba(255,255,255,0.08);
+    border: 0.5px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    color: white;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: var(--font-sans);
+  }
+  .modal select option { background: #1c1c1e; }
+  .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+  .btn-cancel {
+    flex: 1; background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.2);
+    border-radius: 10px; padding: 11px; color: #ccc; font-size: 13px; cursor: pointer; font-family: var(--font-sans);
+  }
+  .btn-save {
+    flex: 2; background: #b5956a; border: none;
+    border-radius: 10px; padding: 11px; color: white; font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font-sans);
+  }
+
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-header { font-size: 10px; color: #888; text-align: center; padding: 4px 0; }
+  .cal-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #ccc; border-radius: 50%;
+  }
+  .cal-day.has-tx { background: #b5956a; color: white; font-weight: 500; cursor: pointer; }
+  .cal-day.empty { color: transparent; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-nav-btn { background: none; border: none; color: #b5956a; font-size: 20px; cursor: pointer; padding: 0 8px; font-family: var(--font-sans); }
+  .cal-nav-title { font-size: 13px; color: white; font-weight: 500; }
+  .cal-detail { margin-top: 12px; font-size: 12px; color: #ccc; min-height: 36px; }
+
+  .confirm-bg {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.65);
+    border-radius: 36px;
+    z-index: 20;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .confirm-bg.open { display: flex; }
+  .confirm-box {
+    background: #1c1c1e;
+    border: 0.5px solid rgba(255,255,255,0.18);
+    border-radius: 18px;
+    padding: 20px;
+    width: 100%;
+    text-align: center;
+  }
+  .confirm-box p { font-size: 13px; color: #ccc; margin-bottom: 16px; }
+  .confirm-box strong { color: white; font-size: 14px; display: block; margin-bottom: 6px; }
+  .confirm-btns { display: flex; gap: 8px; }
+  .btn-confirm-del { flex: 1; background: #b91c1c; border: none; border-radius: 10px; padding: 11px; color: white; font-size: 13px; font-weight: 500; cursor: pointer; font-family: var(--font-sans); }
+  .btn-confirm-cancel { flex: 1; background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 11px; color: #ccc; font-size: 13px; cursor: pointer; font-family: var(--font-sans); }
+</style>
+
+<div style="padding: 8px 0;">
+<div class="app" id="app">
+  <div class="notch"></div>
+  <div class="header">
+    <h1>Mis Finanzas</h1>
+    <p id="month-label">Cargando...</p>
+  </div>
+
+  <div class="balance-card">
+    <div class="balance-label">Balance total acumulado</div>
+    <div class="balance-total" id="balance-total">$0</div>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="summary-label">Ingresos totales</div>
+      <div class="income-val" id="total-income">$0</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Gastos totales</div>
+      <div class="expense-val" id="total-expense">$0</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-beige" onclick="openAddModal()">+ Agregar</button>
+    <button class="btn-beige" onclick="openCalModal()">Calendario</button>
+  </div>
+
+  <div class="section-title">Meses registrados</div>
+  <div class="month-tabs" id="month-tabs"></div>
+
+  <div class="section-title">Transacciones</div>
+  <div class="transactions" id="tx-list"></div>
+
+  <!-- Add modal -->
+  <div class="modal-bg" id="add-modal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h2>Nuevo registro</h2>
+      <label>Tipo</label>
+      <select id="tx-type">
+        <option value="income">Ingreso</option>
+        <option value="expense">Gasto</option>
+      </select>
+      <label>Descripción</label>
+      <input type="text" id="tx-desc" placeholder="Ej. Salario, Arriendo..." />
+      <label>Monto</label>
+      <input type="number" id="tx-amount" placeholder="0" />
+      <label>Fecha</label>
+      <input type="date" id="tx-date" />
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeModal('add-modal')">Cancelar</button>
+        <button class="btn-save" onclick="saveTransaction()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar modal -->
+  <div class="modal-bg" id="cal-modal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calPrev()">&#8249;</button>
+        <span class="cal-nav-title" id="cal-month-title"></span>
+        <button class="cal-nav-btn" onclick="calNext()">&#8250;</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-detail" id="cal-detail"></div>
+      <div class="modal-btns" style="margin-top:14px;">
+        <button class="btn-cancel" onclick="closeModal('cal-modal')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm delete -->
+  <div class="confirm-bg" id="confirm-modal">
+    <div class="confirm-box">
+      <strong id="confirm-name"></strong>
+      <p>¿Seguro que quieres eliminar este registro?</p>
+      <div class="confirm-btns">
+        <button class="btn-confirm-cancel" onclick="closeModal('confirm-modal')">Cancelar</button>
+        <button class="btn-confirm-del" onclick="confirmDelete()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS = ['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
+
+let transactions = [
+  {id:1, type:'income', desc:'Salario', amount:3200000, date:'2025-04-01'},
+  {id:2, type:'expense', desc:'Arriendo', amount:900000, date:'2025-04-05'},
+  {id:3, type:'expense', desc:'Mercado', amount:280000, date:'2025-04-10'},
+  {id:4, type:'income', desc:'Freelance', amount:500000, date:'2025-04-15'},
+  {id:5, type:'expense', desc:'Transporte', amount:120000, date:'2025-03-20'},
+  {id:6, type:'income', desc:'Bono', amount:400000, date:'2025-03-05'},
+];
+
+let selectedMonth = '2025-04';
+let calYear = 2025, calMonth = 3;
+let deleteId = null;
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('es-CO');
+}
+
+function getMonths() {
+  const set = new Set(transactions.map(t => t.date.slice(0,7)));
+  return [...set].sort().reverse();
+}
+
+function renderMonthTabs() {
+  const months = getMonths();
+  if (months.length && !months.includes(selectedMonth)) selectedMonth = months[0];
+  const c = document.getElementById('month-tabs');
+  c.innerHTML = '';
+  months.forEach(m => {
+    const [y, mo] = m.split('-');
+    const btn = document.createElement('div');
+    btn.className = 'month-tab' + (m === selectedMonth ? ' active' : '');
+    btn.textContent = MONTHS[parseInt(mo)-1].slice(0,3) + ' ' + y;
+    btn.onclick = () => { selectedMonth = m; render(); };
+    c.appendChild(btn);
+  });
+}
+
+function renderSummary() {
+  let ti = 0, te = 0;
+  transactions.forEach(t => { if(t.type==='income') ti+=t.amount; else te+=t.amount; });
+  document.getElementById('total-income').textContent = fmt(ti);
+  document.getElementById('total-expense').textContent = fmt(te);
+  document.getElementById('balance-total').textContent = fmt(ti - te);
+  const [y, mo] = selectedMonth.split('-');
+  document.getElementById('month-label').textContent = MONTHS[parseInt(mo)-1] + ' ' + y;
+}
+
+function renderTransactions() {
+  const list = transactions.filter(t => t.date.slice(0,7) === selectedMonth)
+    .sort((a,b) => b.date.localeCompare(a.date));
+  const c = document.getElementById('tx-list');
+  if(!list.length) {
+    c.innerHTML = '<div style="text-align:center;color:#555;font-size:12px;padding:20px 0;">Sin registros este mes</div>';
+    return;
+  }
+  c.innerHTML = list.map(t => {
+    const d = new Date(t.date + 'T12:00:00');
+    const ds = d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0,3);
+    return `<div class="tx-item">
+      <div class="tx-left">
+        <span class="tx-desc">${t.desc}</span>
+        <span class="tx-date">${ds} ${d.getFullYear()}</span>
+      </div>
+      <div class="tx-right">
+        <span class="tx-amount ${t.type==='income'?'income':'expense'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</span>
+        <button class="btn-delete" onclick="askDelete(${t.id},'${t.desc.replace(/'/g,"\\'")}')">&#10005;</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function render() {
+  renderMonthTabs();
+  renderSummary();
+  renderTransactions();
+}
+
+function openAddModal() {
+  document.getElementById('tx-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('tx-desc').value = '';
+  document.getElementById('tx-amount').value = '';
+  document.getElementById('add-modal').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function saveTransaction() {
+  const type = document.getElementById('tx-type').value;
+  const desc = document.getElementById('tx-desc').value.trim();
+  const amount = parseFloat(document.getElementById('tx-amount').value);
+  const date = document.getElementById('tx-date').value;
+  if(!desc || !amount || !date) return;
+  transactions.push({id: Date.now(), type, desc, amount, date});
+  selectedMonth = date.slice(0,7);
+  closeModal('add-modal');
+  render();
+}
+
+function askDelete(id, name) {
+  deleteId = id;
+  document.getElementById('confirm-name').textContent = name;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+function confirmDelete() {
+  transactions = transactions.filter(t => t.id !== deleteId);
+  deleteId = null;
+  closeModal('confirm-modal');
+  const months = getMonths();
+  if(months.length && !months.includes(selectedMonth)) selectedMonth = months[0];
+  render();
+}
+
+function openCalModal() {
+  const [y,m] = selectedMonth.split('-');
+  calYear = parseInt(y); calMonth = parseInt(m)-1;
+  renderCal();
+  document.getElementById('cal-modal').classList.add('open');
+}
+
+function renderCal() {
+  document.getElementById('cal-month-title').textContent = MONTHS[calMonth] + ' ' + calYear;
+  const txDates = new Set(transactions.filter(t => {
+    const d = new Date(t.date + 'T12:00:00');
+    return d.getFullYear()===calYear && d.getMonth()===calMonth;
+  }).map(t => new Date(t.date+'T12:00:00').getDate()));
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = DAYS.map(d=>`<div class="cal-header">${d}</div>`).join('');
+  const first = new Date(calYear, calMonth, 1).getDay();
+  for(let i=0;i<first;i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
+  const days = new Date(calYear, calMonth+1, 0).getDate();
+  for(let d=1;d<=days;d++) {
+    grid.innerHTML += `<div class="cal-day${txDates.has(d)?' has-tx':''}" onclick="showCalDetail(${d})">${d}</div>`;
+  }
+  document.getElementById('cal-detail').innerHTML = '';
+}
+
+function showCalDetail(day) {
+  const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const list = transactions.filter(t=>t.date===ds);
+  if(!list.length) { document.getElementById('cal-detail').innerHTML='<span style="color:#555">Sin registros</span>'; return; }
+  document.getElementById('cal-detail').innerHTML = list.map(t=>
+    `<div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+      <span>${t.desc}</span>
+      <span style="color:${t.type==='income'?'#4ade80':'#f87171'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</span>
+    </div>`
+  ).join('');
+}
+
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
+
+render();
+</script>
